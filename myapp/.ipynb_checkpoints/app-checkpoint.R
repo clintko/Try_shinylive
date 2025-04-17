@@ -1,59 +1,32 @@
+library(tidyverse)
 library(shiny)
 
-# Define UI for app that draws a histogram ----
-ui <- fluidPage(
+### import data
+txt_furl = "https://www.dropbox.com/scl/fi/1sdttdmk29fxjduw1pe3x/fcc_starrmpracrispr_vote2.umap.chipseq_score.tsv?rlkey=jskwb0hxuvxwdo5evd6qjjvnm&raw=1"
 
-  # App title ----
-  titlePanel("Hello Shiny!"),
+dat_region_umap = read_tsv(txt_furl)
+vec_txt_feature = setdiff(colnames(dat), c("UMAP1", "UMAP2", "Region", "Chrom", "ChromStart", "ChromEnd"))
 
-  # Sidebar layout with input and output definitions ----
-  sidebarLayout(
-
-    # Sidebar panel for inputs ----
-    sidebarPanel(
-
-      # Input: Slider for the number of bins ----
-      sliderInput(inputId = "bins",
-                  label = "Number of bins:",
-                  min = 1,
-                  max = 50,
-                  value = 30)
-
-    ),
-
-    # Main panel for displaying outputs ----
-    mainPanel(
-
-      # Output: Histogram ----
-      plotOutput(outputId = "distPlot")
-
+### setup UI
+ui = fluidPage(
+    titlePanel("UMAP Embedding of CREs based on ChIP-seq Signals"),
+    sidebarLayout(
+        sidebarPanel(
+            selectInput("txt_feature", "ChIP-seq Factor", choices = vec_txt_feature, selected = "H3K4me3"),
+        ),
+        mainPanel(
+            plotOutput("plot_fcc_umap")
+        )
     )
-  )
 )
 
-# Define server logic required to draw a histogram ----
-server <- function(input, output) {
-
-  # Histogram of the Old Faithful Geyser Data ----
-  # with requested number of bins
-  # This expression that generates a histogram is wrapped in a call
-  # to renderPlot to indicate that:
-  #
-  # 1. It is "reactive" and therefore should be automatically
-  #    re-executed when inputs (input$bins) change
-  # 2. Its output type is a plot
-  output$distPlot <- renderPlot({
-
-    x    <- faithful$waiting
-    bins <- seq(min(x), max(x), length.out = input$bins + 1)
-
-    hist(x, breaks = bins, col = "#75AADB", border = "white",
-         xlab = "Waiting time to next eruption (in mins)",
-         main = "Histogram of waiting times")
-
-    })
-
+### setup Server
+server = function(input, output) {
+    output$plot_fcc_umap <- renderPlot({
+        ggplot(dat_region_umap, aes_string(x = input$UMAP1, y = input$UMAP2, color = input$txt_feature)) +
+            geom_point(alpha = 0.5) +
+            theme_minimal()
+  })
 }
 
-# Create Shiny app ----
-shinyApp(ui = ui, server = server)
+shinyApp(ui, server)
